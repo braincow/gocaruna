@@ -1,4 +1,4 @@
-package main
+package caruna
 
 import (
 	"encoding/json"

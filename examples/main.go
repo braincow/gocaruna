@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/braincow/gocaruna/caruna"
 	"github.com/joho/godotenv"
 )
 
@@ -15,7 +16,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	api, err := NewCarunaClient()
+	api, err := caruna.NewCarunaClient()
 	if err != nil {
 		log.Fatalf("while building api client: %v", err)
 	}
