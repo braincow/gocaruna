@@ -42,16 +42,9 @@ func NewCarunaClient() (*CarunaAPIClient, error) {
 	return &CarunaAPIClient{client: client}, nil
 }
 
-func (api *CarunaAPIClient) LoginInfo() LoginInfo {
-	return api.login
-}
-
-func (api *CarunaAPIClient) CustomerInfo(customerId string) (*CustomerInfo, error) {
-	// Construct the URL
-	fullURL := fmt.Sprintf("%s/%s/info", CustomersURL, customerId)
-
+func (api *CarunaAPIClient) HttpGet(url string) (*http.Response, error) {
 	// Prepare the request
-	req, err := http.NewRequest("GET", fullURL, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +53,19 @@ func (api *CarunaAPIClient) CustomerInfo(customerId string) (*CustomerInfo, erro
 	req.Header.Set("Authorization", "Bearer "+api.login.Token)
 
 	// Send the request using the client
-	resp, err := api.client.Do(req)
+	return api.client.Do(req)
+}
+
+func (api *CarunaAPIClient) LoginInfo() LoginInfo {
+	return api.login
+}
+
+func (api *CarunaAPIClient) CustomerInfo(customerId string) (*CustomerInfo, error) {
+	// Construct the URL
+	fullURL := fmt.Sprintf("%s/%s/info", CustomersURL, customerId)
+
+	// Send the request using the client
+	resp, err := api.HttpGet(fullURL)
 	if err != nil {
 		return nil, err
 	}
@@ -85,17 +90,8 @@ func (api *CarunaAPIClient) ConsumedHours(customer string, meteringPoint string,
 		"%s/%s/assets/%s/energy?year=%d&month=%d&day=%d&timespan=daily",
 		CustomersURL, customer, meteringPoint, date.Year(), date.Month(), date.Day())
 
-	// Prepare the request
-	req, err := http.NewRequest("GET", fullURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Set headers
-	req.Header.Set("Authorization", "Bearer "+api.login.Token)
-
 	// Send the request using the client
-	resp, err := api.client.Do(req)
+	resp, err := api.HttpGet(fullURL)
 	if err != nil {
 		return nil, err
 	}
@@ -118,17 +114,8 @@ func (api *CarunaAPIClient) MeteringPoints(customer string) ([]MeteringPoint, er
 	// Base URL
 	fullURL := CustomersURL + "/" + customer + "/assets"
 
-	// Prepare request
-	req, err := http.NewRequest("GET", fullURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Set headers
-	req.Header.Set("Authorization", "Bearer "+api.login.Token)
-
-	// Make request using the client
-	resp, err := api.client.Do(req)
+	// Send the request using the client
+	resp, err := api.HttpGet(fullURL)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +125,6 @@ func (api *CarunaAPIClient) MeteringPoints(customer string) ([]MeteringPoint, er
 	if err != nil {
 		return nil, err
 	}
-	//log.Println(string(meteringPointsBody))
 
 	var meteringPoints []MeteringPoint
 	if err := json.Unmarshal(meteringPointsBody, &meteringPoints); err != nil {
@@ -149,11 +135,15 @@ func (api *CarunaAPIClient) MeteringPoints(customer string) ([]MeteringPoint, er
 }
 
 func (api *CarunaAPIClient) Logout() error {
-	_, err := api.client.Get(LogoutURL)
+	var empty = LoginInfo{}
+	if &api.login == &empty {
+		return nil
+	}
+	_, err := api.HttpGet(LogoutURL)
 	if err != nil {
 		return err
 	}
-	api.login = LoginInfo{}
+	api.login = empty
 	return nil
 }
 
