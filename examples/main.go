@@ -29,7 +29,9 @@ func main() {
 
 	customerIds := api.LoginInfo().User.RepresentedCustomerNumbers
 
-	date := time.Date(2023, time.August, 23, 0, 0, 0, 0, time.Local)
+	// always query yesterday instead of a fixed date
+	date := time.Now().Add(-24 * time.Hour)
+	fmt.Printf("[==] %v\n", date)
 
 	for _, customerId := range customerIds {
 		info, err := api.CustomerInfo(customerId)
